@@ -3,10 +3,7 @@
 	/*width: 200px;*/
 	align: center;
 }
-p{
-	color: blue;
-	text-align: center;
-}
+
 
 h2{
 	font: Helvetica;
@@ -15,4 +12,15 @@ h2{
 
 body {
 	background: #F0F8FF;
+}
+
+#resume{
+	padding-left: 40px;
+	padding-right: 40px;
+	padding-top: 15px;
+	padding-bottom: 15px;
+	border-style: dotted;
+	border-color: black;
+	margin: 15px;
+	color: navy;
 }
