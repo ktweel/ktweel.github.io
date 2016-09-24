@@ -1,17 +1,18 @@
-#me{
+.me{
 	height: 300px;
 	/*width: 200px;*/
-	align: center;
+	text-align: center;
 }
 
 
 h2{
-	font: Helvetica;
 	text-align: center;
 }
 
 body {
 	background: #F0F8FF;
+	font-family: "Lucida Console", Monaco, monospace;
+	color: navy;
 }
 
 #resume{
@@ -20,7 +21,22 @@ body {
 	padding-top: 15px;
 	padding-bottom: 15px;
 	border-style: dotted;
-	border-color: black;
+	border-color: navy;
 	margin: 15px;
-	color: navy;
+	
 }
+
+h3 {
+	text-align: center;
+	background-color: white;
+	border-color: navy;
+	border-width: 3px;
+	border-style: solid;
+}
+
+#Education {
+	text-align: center;
+}
+
+
+
