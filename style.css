@@ -7,6 +7,10 @@
 
 h2{
 	text-align: center;
+	background-color: #F0FFF0;
+	padding: 10px;
+	border-style: solid;
+	border-color: navy;
 }
 
 body {
@@ -39,5 +43,27 @@ h3 {
 	text-align: center;
 }
 
+a {
+	text-align: center;
+	background-color: #F0FFF0;
+	padding: 10px;
+	border-style: solid;
+	border-color: navy;
+	text-decoration: none;
+	font-size: 20px;
 
+	/* width: 50%; */
+
+
+}
+
+a:hover {
+	text-decoration: underline;
+}
+
+.center {
+	text-align: center;
+	margin: 40px;
+
+}
 
