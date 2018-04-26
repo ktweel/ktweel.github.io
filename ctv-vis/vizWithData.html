@@ -1,0 +1,1089 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+  div.tooltip { 
+      position: absolute;     
+      text-align: center;            
+      padding: 2px;       
+      font: 12px sans-serif;    
+      background: lightsteelblue; 
+      border: 0px;    
+      border-radius: 8px;     
+      pointer-events: none;     
+  }
+
+  text {
+    font-family: 'Open Sans Condensed', sans-serif;
+    font-size: 16px;
+  }
+
+  body {
+    font-family: 'Open Sans Condensed', sans-serif;
+  }
+
+  div.lefty {
+    float: left;
+    padding: 15px;
+    border: 2px solid #DCDCDC;
+  }
+
+  #graph {
+    width: 70%;
+    border: none;
+    float: left;
+    padding-left: 20px;
+
+  }
+  #data {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+
+  }
+  h1 { 
+    text-align: center;
+  }
+  .small_svg{
+    display: block;
+  }
+</style>
+
+<link href="https://fonts.googleapis.com/css?family=Open+Sans+Condensed:300" rel="stylesheet">
+<script src="https://d3js.org/d3.v4.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3-legend/2.25.6/d3-legend.min.js"></script>
+</head>
+<body>
+    <h1></h1><!-- </br> -->
+    <div class="lefty">
+        <section>Choose whom to compare:</section>
+        <form id = "form" align="left">
+            <input type="radio" name="stack" id="comparison" checked>Villains/Heroes<br>
+            <input type="radio" name="stack" id="comparison">Male/Female
+        </form>  
+        <section> ------------------------------- </section>
+        <section>Sort by Characteristic:</section>
+        <select id="comparisons">
+            <option value = "Skinny/Fat" selected = "selected"> Skinny/Fat </option>
+            <option value = "Beautiful/Ugly"> Beautiful/Ugly </option>
+            <option value = "Light/Dark Skinned"> Light/Dark Skinned </option>
+            <option value = "Well/Sloppily Dressed"> Well/Sloppily Dressed </option>
+            <option value = "Serious/Comic"> Serious/Comic </option>
+            <option value = "Strong/Weak"> Strong/Weak </option>
+            <option value = "Good/Bad"> Good/Bad </option>
+            <option value = "Peaceful/Violent"> Peaceful/Violent </option>
+            <option value = "Kind/Cruel"> Kind/Cruel </option>
+            <option value = "Smart/Stupid"> Smart/Stupid </option>
+            <option value = "Independent/Dependent"> Independent/Dependent </option>
+            <option value = "Warm/Cold"> Warm/Cold </option>
+            <option value = "Honest/Dishonest"> Honest/Dishonest </option>
+            <option value = "Active/Passive"> Active/Passive </option>
+            <option value = "Agile/Clumsy"> Agile/Clumsy </option>
+            <option value = "Competent/Incompetent"> Competent/Incompetent </option>
+            <option value = "Age"> Age </option>
+            <option value = "Sex"> Sex </option>
+            <option value = "Race/Ethnicity/Ethnic Origin"> Race/Ethnicity/Ethnic Origin </option>
+            <option value = "Social Class"> Social Class </option>
+        </select> 
+        <section> ------------------------------- </section>
+        <section>Filter by TV Show:</section>
+        <select id="tvFilter">
+          <option value = "All" selected = "selected"> (All) </option>
+          <option value = "Adventure Time"> Adventure Time </option>
+          <option value = "American Dad"> American Dad </option>
+          <option value = "Arthur"> Arthur </option>
+          <option value = "Bob's Burgers"> Bob's Burgers </option>
+          <option value = "Breadwinners"> Breadwinners </option>
+          <option value = "Digimon"> Digimon </option>
+          <option value = "Dragons: Riders of Berk"> Dragons: Riders of Berk </option>
+          <option value = "Gravity Falls"> Gravity Falls </option>
+          <option value = "Johnny Test"> Johnny Test </option>
+          <option value = "Legend of Korra"> Legend of Korra </option>
+          <option value = "Littlest Pet Shop"> Littlest Pet Shop </option>
+          <option value = "My Little Pony: Friendship is Magic"> My Little Pony: Friendship is Magic </option>
+          <option value = "Phineas and Ferb"> Phineas and Ferb </option>
+          <option value = "Pokemon"> Pokemon </option>
+          <option value = "Sanjay and Craig"> Sanjay and Craig </option>
+          <option value = "Spongebob Squarepants"> Spongebob Squarepants </option>
+          <option value = "Teenage Mutant Ninja Turtles"> Teenage Mutant Ninja Turtles </option>
+          <option value = "Ultimate Spider-Man"> Ultimate Spider-Man </option>
+          <option value = "Ultimate Spider-Man 3"> Ultimate Spider-Man 3 </option>
+          <option value = "Wild Kratts"> Wild Kratts </option>
+          <option value = "WordGirl"> WordGirl </option>
+        </select> 
+        <br />
+        <br />
+        <div class="small_svg"><svg id="legend" width="200" height="200"></svg></div>
+        <!-- <div class="small_svg"><svg id="image" width="200" height="200"></svg></div> -->
+    </div>
+    <div id="graph" class="left">
+        <svg id="data" align="center" width="780" height="580"></svg>
+    </div>
+
+<script>
+// heading
+var title = d3.select("h1")
+              .text("Comparing Villains and Heroes in Childrens' Television")
+              .style("font-size", "30px");
+
+// initialize svg
+var svg = d3.select("#data"),
+    margin = {top: 20, right: 20, bottom: 30, left: 40},
+    width = +svg.attr("width") - margin.left - margin.right,
+    height = +svg.attr("height") - margin.top - margin.bottom,
+    g = svg.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+var svg_legend = d3.select("#legend");
+var svg_image = d3.select("#image");
+
+// initial variables
+var isRanked = false;
+var VH = true;
+var ordinal = true;
+var scaleOffset = 65;
+var padding = 100;
+var circleRadius = 4.5;
+var bucketVCounts = [0, 0, 0, 0, 0, 0];
+var bucketHCounts = [0, 0, 0, 0, 0, 0];
+var bucketVCountsY = [0, 0, 0, 0, 0, 0];
+var bucketHCountsY = [0, 0, 0, 0, 0, 0];
+////////////////////////////////////////////////////
+var numVillains = 0;
+var numHeroes = 0;
+var numMales = 0;
+var numFemales = 0;
+///////////////////////////////////////////////////
+var leftNominals = 0;
+var rightNominals = 0;
+var ageBuckets = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+var sexBuckets = [0, 0, 0, 0];
+var raceBuckets = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+var classBuckets = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];  
+
+var nominalBucketsX = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]; 
+var nominalBucketsY = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]; 
+
+var SkinnyFatLabels = ["N/A", "Skinny", "2", "3", "4", "Fat"];
+var BeautifulUglyLabels = ["N/A", "Beautiful", "2", "3", "4", "Ugly"];
+var LightDarkSkinLabels = ["N/A", "Light Skin", "2", "3", "4", "Dark Skin"];
+var WellSloppilyDressedLabels = ["N/A", "Well Dressed", "2", "3", "4", "Sloppily Dressed"];
+var SeriousComicLabels = ["N/A", "Serious", "2", "3", "4", "Comic"];
+var StrongWeakLabels = ["N/A", "Strong", "2", "3", "4", "Weak"];
+var GoodBadLabels = ["N/A", "Good", "2", "3", "4", "Bad"];
+var PeacefulViolentLabels = ["N/A", "Peaceful", "2", "3", "4", "Violent"];
+var KindCruelLabels = ["N/A", "Kind", "2", "3", "4", "Cruel"];
+var SmartStudpidLabels = ["N/A", "Smart", "2", "3", "4", "Stupid"];
+var IndependentDependentLabels = ["N/A", "Ind.", "2", "3", "4", "Dep."];
+var WarmColdLabels = ["N/A", "Warm", "2", "3", "4", "Cold"];
+var HonestDishonestLabels = ["N/A", "Honest", "2", "3", "4", "Dishonest"];
+var ActivePassiveLabels = ["N/A", "Active", "2", "3", "4", "Passive"];
+var AgileClumsyLabels = ["N/A", "Agile", "2", "3", "4", "Clumsy"];
+var CompetentIncompetentLabels = ["N/A", "Competent", "2", "3", "4", "Incompetent"];
+
+
+// Colors for the circles
+var fillVH = ["#FF8C00", "#0000FF"];
+var fillFM = ["#00BFFF", "#FF1493"];
+
+//Toggling between tv show filters
+d3.select("#tvFilter").on("change", filterTV);
+
+function filterTV() {
+  var currentTitle = d3.select("#tvFilter").property("value");
+  var grayColor = "#D3D3D3";
+
+  svg.selectAll("circle")
+    .style("fill", function(d) {
+      if ((currentTitle != "All") && (d.ShowTitle != currentTitle)) {
+        return grayColor;
+      }
+      if (VH == true) {
+        if (d.HeroVillain == "Villain") {
+          return fillVH[0];
+        }
+        else {
+          return fillVH[1];
+        }
+      }
+      else {
+        if (d.Sex == "Male") {
+          return fillFM[0];
+        }
+        else {
+          return fillFM[1];
+        }
+      }
+    });
+}
+
+
+// Toggling between villains/heroes and male/females
+d3.selectAll("#comparison").on("change", function() {
+  filterTV();
+  if (VH == true) {
+    svg.selectAll("circle")
+        .style("opacity", 1)
+        .style("fill", function(d){if (d.Sex == "Male") return fillFM[0]; else return fillFM[1];});
+
+    i = -1;
+    counter = -1;
+    svg.selectAll("circle")
+       .filter(function(d) {return (d.Sex == "Male");})
+       .transition()
+       .duration(1000)
+       .attr("cx", function(){ i = i + 1; return 5 + (10 * Math.floor(i / 6));})
+       .attr("cy", function(){ counter = counter + 1; return 450 + ((circleRadius * 2) * (counter % 6));});
+    svg.selectAll("circle")
+       .filter(function(d) {return (d.Sex == "Female" || d.Sex == "Uncertain");})
+       .transition()
+       .duration(1000)
+       .attr("cx", function(){ i = i + 1; return 5 + (10 * Math.floor(i / 6));})
+       .attr("cy", function(){ counter = counter + 1; return 450 + ((circleRadius * 2) * (counter % 6));});
+
+    VH = false;
+    title.text("Comparing Males and Females in Childrens' Television");
+    svg_legend.select(".legendOrdinal")
+       .attr("transform", "translate("+width/2+","+-700+")")
+       .call(legendOrdinal);
+    svg_legend.select(".legendOrdinalFM")
+       .attr("transform", "translate(20,20)")
+       .call(legendOrdinalFM);
+  }
+  else {
+    svg.selectAll("circle")
+        .style("fill", function(d){if (d.HeroVillain == "Villain") return fillVH[0]; else return fillVH[1];})
+        .style("opacity", function(d) {if (d.DramaticRole == "Villainous sidekick" || d.DramaticRole == "Heroic sidekick") return .5; return 1;});
+
+    svg.selectAll("circle")
+     .transition()
+     .duration(1000)
+     .attr("cx", function() {return +d3.select(this).attr("restingX");})
+     .attr("cy", function() {return +d3.select(this).attr("restingY");});
+
+    VH = true;
+    title.text("Comparing Villains and Heroes in Childrens' Television");
+    svg_legend.select(".legendOrdinal")
+       .attr("transform", "translate(20,20)")
+       .call(legendOrdinal);
+    svg_legend.select(".legendOrdinalFM")
+       .attr("transform", "translate(20,"+-720+")")
+       .call(legendOrdinalFM);
+  }
+  if (isRanked) {
+    resetScene();
+  }
+});
+
+// Toggling between ordinal and nominal data comparison types
+d3.select("#comparisons").on("change", function () {
+  filterTV();
+  // Determine if our new comparison type is ordinal or nominal
+  if (this.value == "Age" || this.value == "Sex" || this.value == "Race/Ethnicity/Ethnic Origin" || this.value == "Social Class") {
+    ordinal = false;
+  }
+  else {
+    ordinal = true;
+  }
+
+  if (isRanked) {
+    // Get rid of the scale
+    svg.select(".ordinal_scale").transition()
+      .duration(1000)
+      .attr("transform", "translate("+width/2+","+-700+")")
+      .call(function(d) {console.log(d); return centerAxis;});
+
+    svg.selectAll(".nomScale").transition()
+      .duration(1000)
+      .attr("transform", "translate("+-700+","+2*height/3+")");
+
+    resetScene();
+  }
+});
+
+// Vertical Axis
+var axisScale = d3.scalePoint()
+                  .domain(SkinnyFatLabels)
+                  .range([height - padding, padding]);
+
+var centerAxis = d3.axisLeft()
+                   .scale(axisScale)
+                   .ticks(5);
+
+svg.append("g")
+   .attr("class", "ordinal_scale")
+   .attr("transform", "translate("+width/2+","+-700+")")
+   .call(centerAxis);
+/////////////////////////////////////////////////////////////////////////////////
+for (var i = 0; i < 6; i++) {
+  var idL = "bucket_"+i+"_L";
+  var idR = "bucket_"+i+"_R";
+
+  svg.append("text")
+    .attr("class", "ordinalL")
+        .attr("id", idL)
+        .attr("dx", -700)
+        .attr("dy", function() { return ((i * ((padding*2) - height) / 6) + (height - padding));});
+  svg.append("text")
+        .attr("class", "ordinalR")
+        .attr("id", idR)
+        .attr("dx", 1000)
+        .attr("dy", function() { return ((i * ((padding*2) - height) / 6) + (height - padding));});
+
+    svg.append("text")
+        .attr("class", "nominalL")
+        .attr("id", idL)
+        .attr("dx", -700)
+        .attr("dy", function() { return (height/2);});
+    svg.append("text")
+        .attr("class", "nominalR")
+        .attr("id", idR)
+        .attr("dx", 1000)
+        .attr("dy", function() { return (height/2);});
+}
+////////////////////////////////////////////////////////////////////////////////
+
+// Age Axis
+var axisAges = d3.scalePoint()
+                 .domain(["Baby", "Child (4-12)", "Teen (13-18)", "Young Adult", "Middle Aged", "Elderly"])
+                 .range([padding/2, width-(padding/2)]);
+
+var centerAxisAge = d3.axisBottom(axisAges);
+
+svg.append("g")
+   .attr("class", "nomScale")
+   .attr("id", "ages")
+   .attr("transform", "translate("+-700+","+2*height*.4+")")
+   .call(centerAxisAge);
+
+// Sex Axis
+var axisSexes = d3.scalePoint()
+                  .domain(["Female", "Male"])
+                  .range([padding, width-(padding)]);
+
+var centerAxisSexes = d3.axisBottom(axisSexes);
+
+svg.append("g")
+   .attr("class", "nomScale")
+   .attr("id", "sexes")
+   .attr("transform", "translate("+-700+","+2*height*.4+")")
+   .call(centerAxisSexes);
+
+// Race Axis
+var axisRace = d3.scalePoint()
+                 .domain(["Latino", "Black", "Asian", "White", "Other"])
+                 .range([padding/2, width-(padding/2)]);
+
+var centerAxisRace = d3.axisBottom(axisRace);
+
+svg.append("g")
+   .attr("class", "nomScale")
+   .attr("id", "races")
+   .attr("transform", "translate("+-700+","+2*height*.4+")")
+   .call(centerAxisRace);
+
+// Class Axis
+var axisClass = d3.scalePoint()
+                  .domain(["Elite (Royalty)", "Upper Class", "Middle Class", "Working Class", "Criminal"])
+                  .range([padding/2, width-(padding/2)]);
+
+var centerAxisClass = d3.axisBottom(axisClass);
+
+svg.append("g")
+   .attr("class", "nomScale")
+   .attr("id", "classes")
+   .attr("transform", "translate("+-700+","+2*height*.4+")")
+   .call(centerAxisClass);
+
+// Define the div for the tooltip
+var div = d3.select("body").append("div") 
+            .attr("class", "tooltip")       
+            .style("opacity", 0);
+
+//legend Heroes/Villains
+var ordinal = d3.scaleOrdinal()
+                .domain(["Major Hero", "Heroic sidekick", "Villainous Sidekick", "Major Villain"])
+                .range([fillVH[1], "#848fff", "FFCC99", fillVH[0]]);
+
+svg_legend.append("g")
+          .attr("class", "legendOrdinal")
+          .attr("transform", "translate(20,20)");
+
+var legendOrdinal = d3.legendColor()
+                      .shapeWidth(25)
+                      .shapeHeight(25)
+                      .scale(ordinal);
+
+svg_legend.select(".legendOrdinal")
+          .call(legendOrdinal);
+
+
+//legend Male/Female
+var ordinalFM = d3.scaleOrdinal()
+                  .domain(["Male", "Female"])
+                  .range([fillFM[0], fillFM[1]]);
+
+svg_legend.append("g")
+          .attr("class", "legendOrdinalFM")
+          .attr("transform", "translate(400,"+-720+")");
+
+var legendOrdinalFM = d3.legendColor()
+                        .shapeWidth(25)
+                        .shapeHeight(25)
+                        .scale(ordinalFM);
+
+svg_legend.select(".legendOrdinalFM")
+          .call(legendOrdinalFM);
+
+// reading the data
+d3.csv("CTV_clean_4-26.csv", function(d) {
+  d.SkinnyFat = Math.round(parseFloat(d.SkinnyFat));
+  d.BeautifulUgly = Math.round(parseFloat(d.BeautifulUgly));
+  d.LightDarkSkin = Math.round(parseFloat(d.LightDarkSkin));
+  d.WellSloppilyDress = Math.round(parseFloat(d.WellSloppilyDress));
+  d.SeriousComic = Math.round(parseFloat(d.SeriousComic));
+  d.StrongWeak = Math.round(parseFloat(d.StrongWeak));
+  d.GoodBad = Math.round(parseFloat(d.GoodBad));
+  d.PeacefulViolent = Math.round(parseFloat(d.PeacefulViolent));
+  d.KindCruel = Math.round(parseFloat(d.KindCruel));
+  d.SmartStupid = Math.round(parseFloat(d.SmartStupid));
+  d.IndependentDependent = Math.round(parseFloat(d.IndependentDependent));
+  d.WarmCold = Math.round(parseFloat(d.WarmCold));
+  d.HonestDishonest = Math.round(parseFloat(d.HonestDishonest));
+  d.ActivePassive = Math.round(parseFloat(d.ActivePassive));
+  d.AgileClumsy = Math.round(parseFloat(d.AgileClumsy));
+  d.CompetentIncompetent = Math.round(parseFloat(d.CompetentIncompetent));
+
+  if (d.DramaticRole == "Major villain" || d.DramaticRole == "Villainous sidekick") {
+    d.HeroVillain = "Villain";
+    numVillains += 1;
+  } else {
+    d.HeroVillain = "Hero";
+    numHeroes +=1;
+  }
+  if (d.Sex == "Male") {
+    numMales +=1;
+  } else if (d.Sex == "Female") {
+    numFemales += 1;
+  }
+
+  return d;
+  }, function(error, data) {
+    if (error) throw error;
+    i = -1;
+    counter = -1;
+    xcounter = -1;
+    ycounter = -1;
+
+    // draw dots
+    svg.selectAll(".dot")
+        .data(data)
+      .enter().append("circle")
+        .attr("class", "dot")
+        .attr("r", circleRadius)
+        .attr("cx", function(){ i = i + 1; return 5 + (10 * Math.floor(i / 6));})
+        .attr("restingX", function(){ xcounter = xcounter + 1; return 5 + (10 * Math.floor(xcounter / 6));})
+        .attr("cy", function(){ counter = counter + 1; return 450 + ((circleRadius * 2) * (counter % 6));})
+        .attr("restingY", function(){ ycounter = ycounter + 1; return 450 + ((circleRadius * 2) * (ycounter % 6));})
+        .style("fill", function(d) { if (d.HeroVillain == "Hero") return fillVH[1]; else return fillVH[0];})
+        .style("opacity", function(d) {if (d.DramaticRole == "Villainous sidekick" || d.DramaticRole == "Heroic sidekick") return .5; return 1;})
+        .on("mouseover", function(d) {  
+            // console.log(d);
+            var photoLink = "character_photos/"+d.CharacterName+".png";  
+            d3.select(this).attr("r", circleRadius*1.5);
+            div.transition()    
+                .duration(200)    
+                .style("opacity", .9);    
+            div .html("Name: " + d.CharacterName + "<br/>" + "Show: " + d.ShowTitle + "<br/> <img width='100' height='100' src='" + photoLink + "' >")  
+                .style("left", (d3.event.pageX) + "px")   
+                .style("top", (d3.event.pageY - 28) + "px"); 
+        })          
+        .on("mouseout", function(d) {   
+            div.transition()    
+                .duration(500)    
+                .style("opacity", 0); 
+            d3.select(this).attr("r", circleRadius);
+            svg_image.selectAll("image").remove();
+        });
+
+          /* ------------------------------------------------------------
+           Toggling between sorting and unsorting the data
+           ------------------------------------------------------------*/
+        svg.on("click", rankData);
+});
+
+function determineYNominal(d) {
+  var bucketValues = getCurrentBuckets();
+  var sortby = getCurrentComparisonData(d);
+
+  var numBuckets = bucketValues.length / 2;
+  var bucketNum = 0;
+  var bucketVCount = 0;
+  var bucketHCount = 0;
+
+  if (sortby == "Baby or Infant" || sortby == "Female" || sortby == "Latino(a) / Hispanic" || sortby == "Elite") { 
+    bucketNum = 0;
+    bucketHCount = 0;
+    bucketVCount = 1;
+  }
+  else if (sortby == "Child (4 - 12)" || sortby == "Male" || sortby == "Black" || sortby == "Upper Class / Wealthy") { 
+    bucketNum = 1;
+    bucketHCount = 2;
+    bucketVCount = 3;
+  }
+  else if (sortby == "Teenager (13 - 18)" || sortby == "Asian" || sortby == "Middle Class") { 
+    bucketNum = 2; 
+    bucketHCount = 4;
+    bucketVCount = 5;
+  }
+  else if (sortby == "Young adult" || sortby == "White" || sortby == "White " || sortby == "Poor / Working class") { 
+    bucketNum = 3; 
+    bucketHCount = 6;
+    bucketVCount = 7;
+  }
+  else if (sortby == "Middle aged" || sortby == "Other" || sortby == "Underclass / Criminal") { 
+    bucketNum = 4; 
+    bucketHCount = 8;
+    bucketVCount = 9;
+  }
+  else if (sortby == "Elderly") {
+    bucketNum = 5;
+    bucketHCount = 10;
+    bucketVCount = 11;
+  } else if (sortby == "Uncertain") {
+    return 800;
+  }
+
+  if (sortby == "Male" || sortby == "Female") {
+    modCount = 6;
+  } else {
+    modCount = 4;
+  }
+  // If the data point represents a villain or a male, bucket to the left
+  if ((VH && d.HeroVillain == "Villain") || (!VH && d.Sex == "Male")) {
+    var barLength = width - padding;
+    var boxLength = barLength / (numBuckets-1);
+    cy = (2*height*.4 - (scaleOffset/2 - 10)) - ((circleRadius*2) * (Math.floor(nominalBucketsY[bucketVCount]/modCount) +1));
+    nominalBucketsY[bucketVCount]++;
+  }
+  // If the data point represents a hero or a female, bucket to the right
+  else {
+    var barLength = width - padding;
+    var boxLength = barLength / (numBuckets-1);
+    cy = (2*height*.4 - (scaleOffset/2 - 10)) - ((circleRadius*2) * (Math.floor(nominalBucketsY[bucketHCount]/modCount)+ 1));
+    nominalBucketsY[bucketHCount]++;
+  }
+
+  return cy;
+}
+
+function determineXNominal(d) {
+  var bucketValues = getCurrentBuckets();
+  var sortby = getCurrentComparisonData(d);
+  var numBuckets = bucketValues.length / 2;
+  var bucketNum = 0;
+
+  if (sortby == "Baby or Infant" || sortby == "Female" || sortby == "Latino(a) / Hispanic" || sortby == "Elite") { 
+    
+    bucketNum = 0;
+    bucketHCount = 0;
+    bucketVCount = 1;
+  }
+  else if (sortby == "Child (4 - 12)" || sortby == "Male" || sortby == "Black" || sortby == "Upper Class / Wealthy") { 
+    bucketNum = 1;
+    bucketHCount = 2;
+    bucketVCount = 3;
+  }
+  else if (sortby == "Teenager (13 - 18)" || sortby == "Asian" || sortby == "Middle Class") { 
+    bucketNum = 2; 
+    bucketHCount = 4;
+    bucketVCount = 5;
+  }
+  else if (sortby == "Young adult" || sortby == "White" || sortby == "Poor / Working class") { 
+    bucketNum = 3; 
+    bucketHCount = 6;
+    bucketVCount = 7;
+  }
+  else if (sortby == "Middle aged" || sortby == "Other" || sortby == "Underclass / Criminal") { 
+    bucketNum = 4; 
+    bucketHCount = 8;
+    bucketVCount = 9;
+  }
+  else if (sortby == "Elderly") {
+    bucketNum = 5;
+    bucketHCount = 10;
+    bucketVCount = 11;
+  } else if (sortby == "Uncertain") {
+    return 250;
+  }
+
+  if (sortby == "Male" || sortby == "Female") {
+      modCount = 6;
+  } else {
+      modCount = 4;
+  }
+  // If the data point represents a villain or a male, bucket to the left
+  if ((VH && d.HeroVillain == "Villain") || (!VH && d.Sex == "Male")) {
+    
+    var barLength = width - padding;
+    var boxLength = barLength / (numBuckets-1);
+    if (sortby == "Male" || sortby == "Female") {
+      barLength = width - padding*2
+      boxLength = barLength / (numBuckets-1);
+      cx = (padding) + (boxLength*bucketNum) - ((circleRadius*2) * ((nominalBucketsX[bucketVCount] % modCount)+1));
+    } else {
+      cx = (padding/2) + (boxLength*bucketNum) - ((circleRadius*2) * ((nominalBucketsX[bucketVCount] % modCount)+1));
+    }
+    
+    nominalBucketsX[bucketVCount]++;
+  }
+
+  // If the data point represents a hero or a female, bucket to the right
+  else {
+    var barLength = width - padding;
+    var boxLength = barLength / (numBuckets-1);
+    if (sortby == "Female" || sortby == "Male") {
+      barLength = width - padding*2
+      boxLength = barLength / (numBuckets-1);
+      cx = (padding) + (boxLength*bucketNum) + ((circleRadius*2) * (nominalBucketsX[bucketHCount] % modCount));
+    } else {
+      cx = (padding/2) + (boxLength*bucketNum) + ((circleRadius*2) * (nominalBucketsX[bucketHCount] % modCount));
+    }
+    
+    nominalBucketsX[bucketHCount]++;
+  }
+
+  return cx;
+}
+
+function determineXMF(d) {
+  var sortby = getCurrentComparisonData(d);
+  // If the data point represents a male
+  if (d.Sex == "Male") {
+    // Move to the left of the scale
+    cx = (width/2) - scaleOffset - ((circleRadius*2) * Math.floor(bucketVCounts[sortby] / 5));
+    bucketVCounts[sortby]++;
+  }
+
+  // If the data point represents a female
+  else if (d.Sex == "Female"){
+    // Move to the right of the scale
+    cx = (width/2) + scaleOffset + ((circleRadius*2) * Math.floor(bucketHCounts[sortby] / 5));
+    bucketHCounts[sortby]++;
+  } else {
+    cx = 800;
+  }
+  return cx;
+}
+
+function determineXHV(d) {
+  var sortby = getCurrentComparisonData(d);
+  if (d.DramaticRole == "Villainous sidekick" || d.DramaticRole == "Major villain") {
+    // Move to the left of the scale
+    cx = (width/2) - scaleOffset - ((circleRadius*2) * Math.floor(bucketVCounts[sortby] / 5));
+    bucketVCounts[sortby]++;
+  } else {
+    // Move to the right of the scale
+    cx = (width/2) + scaleOffset + ((circleRadius*2) * Math.floor(bucketHCounts[sortby] / 5));
+    bucketHCounts[sortby]++;
+  }
+  return cx;
+}
+
+function determineYOrdinal(d){
+  var sortby = getCurrentComparisonData(d);
+  if ((d.HeroVillain == "Hero" && VH) || (d.Sex == "Female" && !VH)) {
+    var cy = ((((((padding*2) - height) * (sortby)) / (5)) + (height - padding)) - (9 * (bucketHCountsY[sortby] % 5))) + (circleRadius*4);
+    bucketHCountsY[sortby]++;
+  }
+  if ((d.HeroVillain == "Villain" && VH) || (d.Sex == "Male" && !VH)) {
+    var cy = ((((((padding*2) - height) * (sortby)) / (5)) + (height - padding)) - (9 * (bucketVCountsY[sortby] % 5))) + (circleRadius*4);
+    bucketVCountsY[sortby]++;
+  }
+  if (!VH && d.Sex == "Uncertain") {
+    cy = 800;
+  }
+  return cy;
+}
+
+// Clear the board
+function resetScene() {
+  filterTV();
+  if (VH) {
+    svg.selectAll("circle")
+     .transition()
+     .delay(500)
+     .duration(1000)
+     .attr("cx", function() {return +d3.select(this).attr("restingX");})
+     .attr("cy", function() {return +d3.select(this).attr("restingY");});
+  } else {
+    i = -1;
+    counter = -1;
+    svg.selectAll("circle")
+       .filter(function(d) {return (d.Sex == "Male");})
+       .transition()
+       .delay(500)
+       .duration(1000)
+       .attr("cx", function(){ i = i + 1; return 5 + (10 * Math.floor(i / 6));})
+       .attr("cy", function(){ counter = counter + 1; return 450 + ((circleRadius * 2) * (counter % 6));});
+    svg.selectAll("circle")
+       .filter(function(d) {return (d.Sex == "Female" || d.Sex == "Uncertain");})
+       .transition()
+       .delay(500)
+       .duration(1000)
+       .attr("cx", function(){ i = i + 1; return 5 + (10 * Math.floor(i / 6));})
+       .attr("cy", function(){ counter = counter + 1; return 450 + ((circleRadius * 2) * (counter % 6));});
+  }
+        
+  ///////////////////////////////////////////////////////////////////////////////////
+  // Get rid of the percents
+    svg.selectAll(".ordinalL")
+        .attr("dx", -700);
+    svg.selectAll(".ordinalR")
+        .attr("dx", 10000);
+    svg.selectAll(".nominalL")
+        .attr("dx", -700);
+    svg.selectAll(".nominalR")
+        .attr("dx", -700);
+
+  ///////////////////////////////////////////////////////////////////////////////////
+
+  // Clear the bucket counts
+  for (var i = 0; i < bucketHCounts.length; i++){
+    bucketHCounts[i] = 0;
+    bucketVCounts[i] = 0;
+    bucketVCountsY[i] = 0;
+    bucketHCountsY[i] = 0;
+  }
+  rightNominals = 0;
+  leftNominals = 0;
+
+  nominalBucketsX = nominalBucketsX.map(function(){return 0;});
+  nominalBucketsY = nominalBucketsY.map(function(){return 0;});
+
+  isRanked = !isRanked;
+  setTimeout(rankData, 1000);
+}
+
+function rankData() {
+  if (!isRanked) {
+            if (ordinal) {
+              if (VH) {
+                svg.selectAll("circle")
+                   .transition()
+                   .delay(500)
+                   .duration(1000)
+                   .attr("cx", determineXHV)
+                   .attr("cy", determineYOrdinal);
+              } else {
+                svg.selectAll("circle")
+                   .transition()
+                   .delay(500)
+                   .duration(1000)
+                   .attr("cx", determineXMF)
+                   .attr("cy", determineYOrdinal);
+              }
+              // Bring on the scale axis
+              labels = getCurrentLabels();
+              var axisScale = d3.scalePoint()
+                      .domain(labels)
+                      .range([height - padding, padding]);
+
+              var centerAxis = d3.axisLeft()
+                      .scale(axisScale)
+                      .ticks(5);
+              svg.select(".ordinal_scale")
+                 .transition()
+                 .duration(1000)
+                 .attr("transform", "translate("+width/2+","+0+")")
+                 .call(centerAxis);
+
+              ///////////////////////////////////////////////////////////////////////////////////
+              // Bring on the percents
+              for (var i = 1; i < 7; i++) {
+                  var idL = "#bucket_"+(i-1)+"_L";
+                  var idR = "#bucket_"+(i-1)+"_R";
+
+                if (VH) {
+                      var textL = Math.round((bucketVCounts[i-1] / numVillains)*100) + "%";
+                     var textR = Math.round((bucketHCounts[i-1] / numHeroes)*100) + "%";
+                  }
+                  else {
+                      var textL = Math.round((bucketVCounts[i-1] / numMales)*100) + "%";
+                      var textR = Math.round((bucketHCounts[i-1] / numFemales)*100) + "%";
+                  }
+                  svg.select(idL).transition()
+                      .duration(1000)
+                      .attr("dx", function() { return ((width/2) - scaleOffset - scaleOffset/2 - (circleRadius*2*Math.floor(bucketVCounts[i-1] / 5)))})
+                      .attr("dy", function() { return ((i * ((padding*2) - height) / 5) + (height - padding)) + (circleRadius*16);})
+                      .text(textL);
+                  svg.select(idR).transition()
+                      .duration(1000)
+                      .attr("dx", function() { return ((width/2) + scaleOffset - 15 + scaleOffset/2 + (circleRadius*2*Math.floor(bucketHCounts[i-1] / 5)))})
+                      .attr("dy", function() { return ((i * ((padding*2) - height) / 5) + (height - padding)) + (circleRadius * 16);})
+                      .text(textR);
+              }
+        /////////////////////////////////////////////////////////////////////////////////////////
+            } else {
+
+              svg.selectAll("circle")
+                   .transition()
+                   .delay(500)
+                   .duration(1000)
+                   .attr("cx", determineXNominal)
+                   .attr("cy", determineYNominal);
+              var bucketValues = getCurrentBuckets();
+              var numPercents = 0;
+                // Bring on the scale axis
+                if (bucketValues == ageBuckets) {
+                  //numPercents
+                  svg.select("#ages").transition()
+                  .duration(1000)
+                  .attr("transform", "translate("+"0,"+2*height*.4+")");
+                  numPercents = 6;
+                }
+                else if (bucketValues == sexBuckets) {
+                  svg.select("#sexes").transition()
+                  .duration(1000)
+                  .attr("transform", "translate("+"0,"+2*height*.4+")");
+                  numPercents = 2;
+                }
+                else if (bucketValues == raceBuckets) {
+                  svg.select("#races").transition()
+                  .duration(1000)
+                  .attr("transform", "translate("+"0,"+2*height*.4+")");
+                  numPercents = 5;
+                }
+                else if (bucketValues == classBuckets) {
+                  svg.select("#classes").transition()
+                  .duration(1000)
+                  .attr("transform", "translate("+"0,"+2*height*.4+")");
+                  numPercents = 5;
+                }
+              
+              //////////////////////////////////////////////////////////////////////////
+                // Bring on the percents
+              var nominalBucketCount = 1;
+              for (var i = 1; i < 7; i++) {
+                  var idL = "#bucket_"+(i-1)+"_L";
+                  var idR = "#bucket_"+(i-1)+"_R";
+                  var barLength = width - padding;
+                  var boxLength = barLength / (numPercents-1);
+                  var modCount = 0;
+
+                  if (i > numPercents) {
+                    break;
+                  }
+                  console.log(nominalBucketsX);
+                  console.log(numMales);
+                  if (VH) {
+                      var textR = Math.round((nominalBucketsX[nominalBucketCount] / numVillains)*100) + "%";
+                      var textL = Math.round((nominalBucketsX[nominalBucketCount-1] / numHeroes)*100) + "%";
+
+                      if (bucketValues == sexBuckets) {
+                        modCount = 6;
+                      } else {
+                        modCount = 4;
+                      }
+                      
+                  }
+                  else {
+                      var textR = Math.round((nominalBucketsX[nominalBucketCount] / numMales)*100) + "%";
+                      var textL = Math.round((nominalBucketsX[nominalBucketCount-1] / numFemales)*100) + "%";
+                      console.log(textR);
+                      if (bucketValues == sexBuckets) {
+                        modCount = 6;
+                      } else {
+                        modCount = 4;
+                      }
+                 }
+
+                svg.select(idL).transition()
+                      .duration(1000)
+                      .attr("dx", function() { return ((padding/2) + (boxLength*(i-1)) + (circleRadius));})
+                      .attr("dy", function() {return (2*height*.4 - (scaleOffset/2 - 10)) - 10 - ((circleRadius*2) * (Math.floor(nominalBucketsY[nominalBucketCount-1]/modCount) +1));})
+                      .text(textL);
+                svg.select(idR).transition()
+                      .duration(1000)
+                      .attr("dx", function() { return ((padding/2) + (boxLength*(i-1)) - (circleRadius*7));})
+                      .attr("dy", function() {return (2*height*.4 - (scaleOffset/2 - 10)) - 10 - ((circleRadius*2) * (Math.floor(nominalBucketsY[nominalBucketCount]/modCount) +1));})
+                      .text(textR);
+
+                  nominalBucketCount += 2;
+              }
+              //////////////////////////////////////////////////////////////////////////
+            }  
+          } 
+          // If the data is currently sorted, unsort it
+          if (isRanked) {
+            if (VH) {
+              svg.selectAll("circle")
+               .transition()
+               .delay(500)
+               .duration(1000)
+               .attr("cx", function() {return +d3.select(this).attr("restingX");})
+               .attr("cy", function() {return +d3.select(this).attr("restingY");});
+            } else {
+              i = -1;
+              counter = -1;
+              svg.selectAll("circle")
+                 .filter(function(d) {return (d.Sex == "Male");})
+                 .transition()
+                 .delay(500)
+                 .duration(1000)
+                 .attr("cx", function(){ i = i + 1; return 5 + (10 * Math.floor(i / 6));})
+                 .attr("cy", function(){ counter = counter + 1; return 450 + ((circleRadius * 2) * (counter % 6));});
+              svg.selectAll("circle")
+                 .filter(function(d) {return (d.Sex == "Female" || d.Sex == "Uncertain");})
+                 .transition()
+                 .delay(500)
+                 .duration(1000)
+                 .attr("cx", function(){ i = i + 1; return 5 + (10 * Math.floor(i / 6));})
+                 .attr("cy", function(){ counter = counter + 1; return 450 + ((circleRadius * 2) * (counter % 6));});
+            }
+            
+            // Get rid of the scale
+            if (ordinal) {
+              svg.select(".ordinal_scale").transition()
+                 .duration(1000)
+                 .attr("transform", "translate("+width/2+","+-700+")")
+            } else {
+                svg.selectAll(".nomScale").transition()
+                   .duration(1000)
+                   .attr("transform", "translate("+-700+","+2*height*.4+")")
+            }
+
+            ///////////////////////////////////////////////////////////////////////////////////
+            // Get rid of the percents
+            svg.selectAll(".ordinalL")
+                .attr("dx", -700);
+            svg.selectAll(".ordinalR")
+                .attr("dx", 10000);
+            ///////////////////////////////////////////////////////////////////////////////////
+          }
+
+            // Clear the scale bucket counts now that the data is sorted
+            if (isRanked) {
+              for (var i = 0; i < bucketHCounts.length; i++){
+                bucketHCounts[i] = 0;
+                bucketVCounts[i] = 0;
+                bucketHCountsY[i] = 0;
+                bucketVCountsY[i] = 0;
+              }
+              leftNominals = 0;
+              rightNominals = 0;
+
+              nominalBucketsX = nominalBucketsX.map(function(){return 0;});
+              nominalBucketsY = nominalBucketsY.map(function(){return 0;});
+            }
+            isRanked = !isRanked;
+}
+
+
+// Make sure we are accessing the correct data based on user selection
+function getCurrentComparisonData(d) {
+  var currentSelected = d3.select("#comparisons").property("value");
+  if (currentSelected == "Skinny/Fat") 
+    return d.SkinnyFat;
+  else if (currentSelected == "Beautiful/Ugly")
+    return d.BeautifulUgly;
+  else if (currentSelected == "Light/Dark Skinned")
+    return d.LightDarkSkin;
+  else if (currentSelected == "Well/Sloppily Dressed")
+    return d.WellSloppilyDress;
+  else if (currentSelected == "Serious/Comic")
+    return d.SeriousComic;
+  else if (currentSelected == "Strong/Weak")
+    return d.StrongWeak;
+  else if (currentSelected == "Good/Bad")
+    return d.GoodBad;
+  else if (currentSelected == "Peaceful/Violent")
+    return d.PeacefulViolent;
+  else if (currentSelected == "Kind/Cruel")
+    return d.KindCruel;
+  else if (currentSelected == "Smart/Stupid")
+    return d.SmartStupid;
+  else if (currentSelected == "Independent/Dependent")
+    return d.IndependentDependent;
+  else if (currentSelected == "Warm/Cold")
+    return d.WarmCold;
+  else if (currentSelected == "Honest/Dishonest")
+    return d.HonestDishonest;
+  else if (currentSelected == "Active/Passive")
+    return d.ActivePassive;
+  else if (currentSelected == "Agile/Clumsy")
+    return d.AgileClumsy;
+  else if (currentSelected == "Competent/Incompetent")
+    return d.CompetentIncompetent;
+  else if (currentSelected == "Age")
+    return d.AgeGroup;
+  else if (currentSelected == "Sex")
+    return d.Sex;
+  else if (currentSelected == "Race/Ethnicity/Ethnic Origin")
+    return d.RaceEthnicityEthnicOrigin;
+  else if (currentSelected == "Social Class")
+    return d.SocialClass;
+}
+
+function getCurrentBuckets() {
+  var currentSelected = d3.select("#comparisons").property("value");
+  if (currentSelected == "Age")
+    return ageBuckets;
+  else if (currentSelected == "Sex")
+    return sexBuckets;
+  else if (currentSelected == "Race/Ethnicity/Ethnic Origin")
+    return raceBuckets;
+  else if (currentSelected == "Social Class")
+    return classBuckets;
+}
+
+function getCurrentAxis() {
+  var currentSelected = d3.select("#comparisons").property("value");
+  if (currentSelected == "Age")
+    return centerAxisAges;
+  else if (currentSelected == "Sex")
+    return centerAxisSexes;
+  else if (currentSelected == "Race/Ethnicity/Ethnic Origin")
+    return centerAxisRace;
+  else if (currentSelected == "Social Class")
+    return centerAxisClass;
+}
+
+function getCurrentLabels() {
+  var currentSelected = d3.select("#comparisons").property("value");
+  if (currentSelected == "Skinny/Fat") 
+    return SkinnyFatLabels;
+  else if (currentSelected == "Beautiful/Ugly")
+    return BeautifulUglyLabels;
+  else if (currentSelected == "Light/Dark Skinned")
+    return LightDarkSkinLabels;
+  else if (currentSelected == "Well/Sloppily Dressed")
+    return WellSloppilyDressedLabels;
+  else if (currentSelected == "Serious/Comic")
+    return SeriousComicLabels;
+  else if (currentSelected == "Strong/Weak")
+    return StrongWeakLabels;
+  else if (currentSelected == "Good/Bad")
+    return GoodBadLabels;
+  else if (currentSelected == "Peaceful/Violent")
+    return PeacefulViolentLabels;
+  else if (currentSelected == "Kind/Cruel")
+    return KindCruelLabels;
+  else if (currentSelected == "Smart/Stupid")
+    return SmartStudpidLabels;
+  else if (currentSelected == "Independent/Dependent")
+    return IndependentDependentLabels;
+  else if (currentSelected == "Warm/Cold")
+    return WarmColdLabels;
+  else if (currentSelected == "Honest/Dishonest")
+    return HonestDishonestLabels;
+  else if (currentSelected == "Active/Passive")
+    return ActivePassiveLabels;
+  else if (currentSelected == "Agile/Clumsy")
+    return AgileClumsyLabels;
+  else if (currentSelected == "Competent/Incompetent")
+    return CompetentIncompetentLabels;
+}
+
+</script>
+</body>
+</html>
+
