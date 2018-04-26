@@ -434,7 +434,7 @@ svg_legend.select(".legendOrdinalFM")
           .call(legendOrdinalFM);
 
 // reading the data
-d3.csv("CTV_clean_4-26.csv", function(d) {
+d3.csv("CTV_clean.csv", function(d) {
   d.SkinnyFat = Math.round(parseFloat(d.SkinnyFat));
   d.BeautifulUgly = Math.round(parseFloat(d.BeautifulUgly));
   d.LightDarkSkin = Math.round(parseFloat(d.LightDarkSkin));
