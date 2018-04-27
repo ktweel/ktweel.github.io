@@ -165,7 +165,7 @@ var nominalBucketsY = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 var SkinnyFatLabels = ["N/A", "Skinny", "2", "3", "4", "Fat"];
 var BeautifulUglyLabels = ["N/A", "Beautiful", "2", "3", "4", "Ugly"];
 var LightDarkSkinLabels = ["N/A", "Light Skin", "2", "3", "4", "Dark Skin"];
-var WellSloppilyDressedLabels = ["N/A", "Well Dressed", "2", "3", "4", "Sloppily Dressed"];
+var WellSloppilyDressedLabels = ["N/A", "Well Dr.", "2", "3", "4", "Sloppily Dr."];
 var SeriousComicLabels = ["N/A", "Serious", "2", "3", "4", "Comic"];
 var StrongWeakLabels = ["N/A", "Strong", "2", "3", "4", "Weak"];
 var GoodBadLabels = ["N/A", "Good", "2", "3", "4", "Bad"];
@@ -177,7 +177,7 @@ var WarmColdLabels = ["N/A", "Warm", "2", "3", "4", "Cold"];
 var HonestDishonestLabels = ["N/A", "Honest", "2", "3", "4", "Dishonest"];
 var ActivePassiveLabels = ["N/A", "Active", "2", "3", "4", "Passive"];
 var AgileClumsyLabels = ["N/A", "Agile", "2", "3", "4", "Clumsy"];
-var CompetentIncompetentLabels = ["N/A", "Competent", "2", "3", "4", "Incompetent"];
+var CompetentIncompetentLabels = ["N/A", "Comp.", "2", "3", "4", "Incomp."];
 
 
 // Colors for the circles
@@ -434,7 +434,7 @@ svg_legend.select(".legendOrdinalFM")
           .call(legendOrdinalFM);
 
 // reading the data
-d3.csv("CTV_Clean.csv", function(d) {
+d3.csv("CTV_clean_4-26.csv", function(d) {
   d.SkinnyFat = Math.round(parseFloat(d.SkinnyFat));
   d.BeautifulUgly = Math.round(parseFloat(d.BeautifulUgly));
   d.LightDarkSkin = Math.round(parseFloat(d.LightDarkSkin));
@@ -880,6 +880,8 @@ function rankData() {
 
                       if (bucketValues == sexBuckets) {
                         modCount = 6;
+                        barLength = width - padding*2;
+                        boxLength = barLength / (numPercents-1);
                       } else {
                         modCount = 4;
                       }
@@ -891,6 +893,8 @@ function rankData() {
                       console.log(textR);
                       if (bucketValues == sexBuckets) {
                         modCount = 6;
+                        barLength = width - padding*2;
+                        boxLength = barLength / (numPercents-1);
                       } else {
                         modCount = 4;
                       }
@@ -898,12 +902,12 @@ function rankData() {
 
                 svg.select(idL).transition()
                       .duration(1000)
-                      .attr("dx", function() { return ((padding/2) + (boxLength*(i-1)) + (circleRadius));})
+                      .attr("dx", function() { if (bucketValues == sexBuckets) {console.log(boxLength); return ((padding) + (boxLength*(i-1)) + (circleRadius))} else {return ((padding/2) + (boxLength*(i-1)) + (circleRadius));}})
                       .attr("dy", function() {return (2*height*.4 - (scaleOffset/2 - 10)) - 10 - ((circleRadius*2) * (Math.floor(nominalBucketsY[nominalBucketCount-1]/modCount) +1));})
                       .text(textL);
                 svg.select(idR).transition()
                       .duration(1000)
-                      .attr("dx", function() { return ((padding/2) + (boxLength*(i-1)) - (circleRadius*7));})
+                      .attr("dx", function() { if (bucketValues == sexBuckets) {return ((padding) + (boxLength*(i-1)) - (circleRadius*7))} else{return ((padding/2) + (boxLength*(i-1)) - (circleRadius*7));}})
                       .attr("dy", function() {return (2*height*.4 - (scaleOffset/2 - 10)) - 10 - ((circleRadius*2) * (Math.floor(nominalBucketsY[nominalBucketCount]/modCount) +1));})
                       .text(textR);
 
