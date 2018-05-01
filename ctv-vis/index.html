@@ -47,6 +47,11 @@
   .small_svg{
     display: block;
   }
+
+  h4 {
+    text-align: center;
+    font-style: italic;
+  }
 </style>
 
 <link href="https://fonts.googleapis.com/css?family=Open+Sans+Condensed:300" rel="stylesheet">
@@ -54,7 +59,8 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3-legend/2.25.6/d3-legend.min.js"></script>
 </head>
 <body>
-    <h1></h1><!-- </br> -->
+    <h1></h1>
+    <h4></h4>
     <div class="lefty">
         <section>Choose whom to compare:</section>
         <form id = "form" align="left">
@@ -125,6 +131,8 @@
 var title = d3.select("h1")
               .text("Comparing Villains and Heroes in Childrens' Television")
               .style("font-size", "30px");
+var dataCreds = d3.select("h4")
+              .text("Data from Professors Calvin Gidney and Julie Dubrow at the Children's Television Project of Tufts University");
 
 // initialize svg
 var svg = d3.select("#data"),
